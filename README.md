@@ -15,14 +15,14 @@ Portfolio-quality E2E tests for the Air Canada booking funnel: **Home → Result
 
 ```
 aircanada-playwright-e2e/
+├── .github/workflows/
+│   └── playwright.yml         # CI: run tests on push/PR (main, master)
 ├── playwright.config.ts      # Chromium + WebKit, baseURL, timeouts
 ├── tsconfig.json
 ├── fixtures/
 │   └── searchData.ts         # Origin, destination, dates (roll-forward)
 ├── tests/
-│   ├── booking.smoke.spec.ts # Smoke tests (uses BookingFlow)
-│   └── e2e/
-│       └── booking.smoke.spec.ts
+│   └── booking.smoke.spec.ts # Smoke tests (return + one-way, uses BookingFlow)
 ├── src/
 │   ├── pages/                # Page objects
 │   │   ├── HomePage.ts
@@ -48,6 +48,16 @@ aircanada-playwright-e2e/
 1. **Home**: Search (origin, destination, dates) → CookieGuard → search.
 2. **Results**: Ensure loaded → **open filter first** → Max. 1 stop → Done → select first row → cheapest fare (return: outbound then inbound).
 3. **Review** → **Passenger** (minimal info) → **Seat selection** (skip) → **Options** → **Payment** (assert only).
+
+## CI/CD (GitHub Actions)
+
+Tests run on **push and pull_request** to `main` or `master`:
+
+- **Workflow:** `.github/workflows/playwright.yml`
+- **Job:** Install deps → Install Chromium + WebKit → `npm run test`
+- **Artifacts:** `playwright-report` (always, 7 days); `test-results` (traces/videos/screenshots on failure only, 7 days)
+
+Set `CI: true` is already used by your config (fewer workers, `forbidOnly`).
 
 ## Commands
 
