@@ -1,4 +1,4 @@
-import { type Page } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
 import { CookieGuard } from '../guards/CookieGuard';
 import { HomePage } from '../pages/HomePage';
 import { ResultsPage } from '../pages/ResultsPage';
@@ -52,10 +52,20 @@ export class BookingFlow {
     departureDate: { day: number; month: number; year: number };
     returnDate?: { day: number; month: number; year: number };
   }): Promise<void> {
-    await this.homePage.goto();
-    await CookieGuard.acceptIfPresent(this.page);
-    await this.homePage.startSearchFromHome(params);
-    await CookieGuard.acceptIfPresent(this.page); // May appear after search
+    await test.step('Home: open site and accept cookies', async () => {
+      // Business step boundary for reporting
+      await this.homePage.goto();
+      await CookieGuard.acceptIfPresent(this.page);
+    });
+
+    await test.step(
+      `Home: search flights ${params.origin} -> ${params.destination}`,
+      async () => {
+        // Business step boundary for reporting
+        await this.homePage.startSearchFromHome(params);
+        //await CookieGuard.acceptIfPresent(this.page); // May appear after search
+      },
+    );
   }
 
   /**
@@ -67,40 +77,68 @@ export class BookingFlow {
    * - For return trips: select outbound then inbound.
    */
   async filterAndSelectFlightMax1Stop(params: { tripType: 'oneway' | 'return' }): Promise<void> {
-    await this.resultsPage.ensureLoaded();
-    await this.resultsPage.openFilters();
-    await this.resultsPage.applyMaxStopsFilter(1);
+    await test.step('Results: ensure loaded', async () => {
+      // Business step boundary for reporting
+      await this.resultsPage.ensureLoaded();
+    });
 
-    if (params.tripType === 'return') {
-      await this.resultsPage.selectFirstCardCheapestFareReturnTrip();
-    } else {
-      await this.resultsPage.selectFirstCardCheapestFareOneWay();
-    }
+    await test.step('Results: open filters', async () => {
+      // Business step boundary for reporting
+      await this.resultsPage.openFilters();
+    });
+
+    await test.step('Results: apply max stops = 1', async () => {
+      // Business step boundary for reporting
+      await this.resultsPage.applyMaxStopsFilter(1);
+    });
+
+    await test.step(`Results: select cheapest fare (${params.tripType})`, async () => {
+      // Business step boundary for reporting
+      if (params.tripType === 'return') {
+        await this.resultsPage.selectFirstCardCheapestFareReturnTrip();
+      } else {
+        await this.resultsPage.selectFirstCardCheapestFareOneWay();
+      }
+    });
   }
 
   /**
    * Step 3: Proceed through review and passenger details.
    */
   async proceedThroughReviewPassenger(): Promise<void> {
-    // Review page
-    await this.reviewPage.ensureLoaded();
-    await CookieGuard.acceptIfPresent(this.page);
-    await this.reviewPage.continue();
+    await test.step('Review: ensure loaded, accept cookies, continue', async () => {
+      // Business step boundary for reporting
+      await this.reviewPage.ensureLoaded();
+      await CookieGuard.acceptIfPresent(this.page);
+      await this.reviewPage.continue();
+    });
 
-    // Passenger page
-    await this.passengerPage.ensureLoaded();
-    await CookieGuard.acceptIfPresent(this.page);
-    await this.passengerPage.fillMinimalPassengerInfo();
-    await this.passengerPage.continue();
+    await test.step(
+      'Passenger: ensure loaded, accept cookies, fill minimal info, continue',
+      async () => {
+        // Business step boundary for reporting
+        await this.passengerPage.ensureLoaded();
+        await CookieGuard.acceptIfPresent(this.page);
+        await this.passengerPage.fillMinimalPassengerInfo();
+        await this.passengerPage.continue();
+      },
+    );
   }
 
   /**
    * Step 4: Skip seat selection and reach options page.
    */
   async skipSeatsAndReachOptions(): Promise<void> {
-    await this.seatSelectionPage.skipSeatsAndContinueToOptions();
-    await CookieGuard.acceptIfPresent(this.page);
-    await this.optionsPage.ensureLoaded();
+    await test.step('Seats: skip seats and continue to options', async () => {
+      // Business step boundary for reporting
+      await this.seatSelectionPage.skipSeatsAndContinueToOptions();
+    });
+
+    await test.step('Options: accept cookies and ensure loaded', async () => {
+      // Business step boundary for reporting
+      await CookieGuard.acceptIfPresent(this.page);
+      await this.optionsPage.ensureLoaded();
+    });
   }
 
   /**
@@ -108,8 +146,15 @@ export class BookingFlow {
    * This is the end of the smoke test flow.
    */
   async continueToPaymentAndAssert(): Promise<void> {
-    await this.optionsPage.continueToPayment();
-    await CookieGuard.acceptIfPresent(this.page);
-    await this.paymentPage.assertLoaded();
+    await test.step('Options: continue to payment', async () => {
+      // Business step boundary for reporting
+      await this.optionsPage.continueToPayment();
+    });
+
+    await test.step('Payment: accept cookies and assert loaded', async () => {
+      // Business step boundary for reporting
+      await CookieGuard.acceptIfPresent(this.page);
+      await this.paymentPage.assertLoaded();
+    });
   }
 }

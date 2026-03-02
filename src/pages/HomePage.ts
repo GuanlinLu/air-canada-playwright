@@ -1,4 +1,4 @@
-import { type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * HomePage: Flight search entry point.
@@ -12,50 +12,79 @@ export class HomePage {
   readonly destinationInput: Locator;
   readonly departureDateButton: Locator;
   readonly searchButton: Locator;
+  readonly selectButton: Locator;
+  readonly calendarDialog: Locator;
 
   constructor(page: Page) {
     this.page = page;
     // Use the large tiles labelled "Departing from" / "Arriving in"
-    this.originInput = page.getByRole('button', { name: /departing from/i }).first();
-    this.destinationInput = page.getByRole('button', { name: /arriving in/i }).first();
+    this.originInput = page
+      .getByRole("button", { name: /departing from/i })
+      .first();
+    this.destinationInput = page
+      .getByRole("button", { name: /arriving in/i })
+      .first();
     // Departure date field has a stable ID
-    this.departureDateButton = page.locator('#bkmg-desktop_travelDates-formfield-1');
+    this.departureDateButton = page.locator(
+      "#bkmg-desktop_travelDates-formfield-1",
+    );
+    // Calendar dialog
+    this.calendarDialog = page.locator(
+      "#bkmg-desktop_travelDatesAbcCalendarDialog",
+    );
+    //Select button from the calendar
+    this.selectButton = this.calendarDialog.getByRole("button", {
+      name: "Select",
+      exact: true,
+    });
     // Search button has a stable ID
-    this.searchButton = page.locator('#bkmg-desktop_findButton');
+    this.searchButton = page.locator("#bkmg-desktop_findButton");
   }
 
   async goto(): Promise<void> {
-    await this.page.goto('/');
+    await this.page.goto("/");
   }
 
   /**
    * Origin/destination tiles open a dedicated input bar.
    * We wait for the specific input by ID so we never accidentally target the wrong field.
    */
-  private async openPanelAndSelectLocation(trigger: Locator, inputSelector: string, value: string): Promise<void> {
+  private async openPanelAndSelectLocation(
+    trigger: Locator,
+    inputSelector: string,
+    value: string,
+  ): Promise<void> {
     await trigger.click();
     const searchInput = this.page.locator(inputSelector);
-    await searchInput.waitFor({ state: 'visible', timeout: 10_000 });
+    await searchInput.waitFor({ state: "visible", timeout: 10_000 });
     await searchInput.fill(value);
-    const firstOption = this.page.getByRole('option').first();
-    await firstOption.waitFor({ state: 'visible', timeout: 10_000 });
+    const firstOption = this.page.getByRole("option").first();
+    await firstOption.waitFor({ state: "visible", timeout: 10_000 });
     await firstOption.click();
   }
 
   async fillOrigin(origin: string): Promise<void> {
-    await this.openPanelAndSelectLocation(this.originInput, '#flightsOriginLocation', origin);
+    await this.openPanelAndSelectLocation(
+      this.originInput,
+      "#flightsOriginLocation",
+      origin,
+    );
   }
 
   async fillDestination(destination: string): Promise<void> {
-    await this.openPanelAndSelectLocation(this.destinationInput, '#flightsOriginDestination', destination);
+    await this.openPanelAndSelectLocation(
+      this.destinationInput,
+      "#flightsOriginDestination",
+      destination,
+    );
   }
 
   /**
    * Utility: build the concrete date-cell selector used by Air Canada calendar.
    */
   private buildDateSelector(year: number, month: number, day: number): string {
-    const mm = month.toString().padStart(2, '0');
-    const dd = day.toString().padStart(2, '0');
+    const mm = month.toString().padStart(2, "0");
+    const dd = day.toString().padStart(2, "0");
     return `#bkmg-desktop_travelDates-date-${year}-${mm}-${dd} > p`;
   }
 
@@ -64,33 +93,31 @@ export class HomePage {
    */
   async selectDepartureAndReturnDates(
     departure: { day: number; month: number; year: number },
-    ret: { day: number; month: number; year: number }
+    ret: { day: number; month: number; year: number },
   ): Promise<void> {
     await this.departureDateButton.click();
 
     const departureSelector = this.buildDateSelector(
       departure.year,
       departure.month,
-      departure.day
+      departure.day,
     );
-    const returnSelector = this.buildDateSelector(
-      ret.year,
-      ret.month,
-      ret.day
-    );
+    const returnSelector = this.buildDateSelector(ret.year, ret.month, ret.day);
 
     await this.page.locator(departureSelector).click({ timeout: 10_000 });
     await this.page.locator(returnSelector).click({ timeout: 10_000 });
 
     // Confirm the date selection
-    await this.page.locator('#bkmg-desktop_travelDates_1_confirmDates').click({ timeout: 10_000 });
+    await this.selectButton.click({ timeout: 10_000 });
   }
 
   /**
    * Clicks the search button to submit the flight search.
    */
   async search(): Promise<void> {
-    await this.searchButton.click({ timeout: 10_000 });
+    await this.searchButton.waitFor({ state: "visible" });
+    await expect(this.searchButton).toBeEnabled();
+    await this.searchButton.click();
   }
 
   /**
@@ -107,10 +134,16 @@ export class HomePage {
     await this.fillDestination(params.destination);
 
     if (params.returnDate) {
-      await this.selectDepartureAndReturnDates(params.departureDate, params.returnDate);
+      await this.selectDepartureAndReturnDates(
+        params.departureDate,
+        params.returnDate,
+      );
     } else {
       // One-way: site often requires both dates for confirm to enable. Use same date twice.
-      await this.selectDepartureAndReturnDates(params.departureDate, params.departureDate);
+      await this.selectDepartureAndReturnDates(
+        params.departureDate,
+        params.departureDate,
+      );
     }
 
     await this.search();

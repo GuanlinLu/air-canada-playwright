@@ -33,13 +33,14 @@ jobs:
         env:
           CI: true
 
-      - name: Upload test results
+      - name: Upload playwright report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+          if-no-files-found: error
 
       - name: Upload test-results (traces, videos, screenshots)
         uses: actions/upload-artifact@v4
@@ -48,3 +49,4 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 7
+          if-no-files-found: ignore

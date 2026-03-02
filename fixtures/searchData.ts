@@ -31,6 +31,6 @@ export const searchData = {
    * Logical demo dates (Feb 14 and Mar 14) defined once here;
    * `rollForwardIfPast` keeps them in the future so tests don't expire.
    */
-  departureDate: rollForwardIfPast(2026, 2, 14),
-  returnDate: rollForwardIfPast(2026, 3, 14),
+  departureDate: rollForwardIfPast(2026, 3, 22),
+  returnDate: rollForwardIfPast(2026, 4, 22),
 };

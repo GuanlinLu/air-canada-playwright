@@ -11,7 +11,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 1,
   workers: process.env.CI ? 2 : undefined,
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [['html', { outputFolder: 'playwright-report', open: 'never' }], ['list']],
 
   use: {
     baseURL: 'https://www.aircanada.com',

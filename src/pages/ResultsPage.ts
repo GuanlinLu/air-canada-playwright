@@ -1,4 +1,4 @@
-import { type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { LoadingGuard } from '../guards/LoadingGuard';
 import { ResultsFiltersComponent } from '../components/ResultsFiltersComponent';
 import {
@@ -27,7 +27,10 @@ export class ResultsPage {
    * Ensures results page is loaded and ready.
    */
   async ensureLoaded(): Promise<void> {
-    await LoadingGuard.waitForResultsReady(this.page);
+    //await LoadingGuard.waitForResultsReady(this.page);
+    await expect(this.page.getByRole('heading', { name: /Departing flight/i })).toBeVisible();
+
+// 然后断言至少有 1 个 flight card（下方方案 2/3 去找卡片）
   }
 
   /**

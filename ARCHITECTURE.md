@@ -54,7 +54,7 @@ aircanada-playwright-e2e/
 - Encapsulate complete business processes
 - Tests should be thin and only call Flow methods
 
-### 5. **Tests** (`tests/e2e/`)
+### 5. **Tests** (`tests`)
 - Thin test specifications
 - Only orchestrate Flows
 - Tagged with `@smoke`, `@regression`, etc.
